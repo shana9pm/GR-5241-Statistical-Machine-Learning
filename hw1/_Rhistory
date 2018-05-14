@@ -1,0 +1,38 @@
+options("getSymbols.yahoo.warning"=FALSE)
+options("getSymbols.warning4.0"=FALSE)
+options(warn = F)
+library(quantmod,warn.conflicts = F)
+longstring="AAPL	AXP	BA	CAT	CSCO	CVX	DIS	DWDP	GE	GS	HD	IBM	INTC	JNJ	JPM	KO	MCD	MMM	MRK	MSFT	NKE	PFE	PG	TRV	UNH	UTX	V	VZ	WMT	XOM
+"
+DJIname <- strsplit(longstring,split = "\t")
+DJIname <- DJIname[[1]]#unlist it
+DJIname[30] <- "XOM"#final term has a \n
+data <- getSymbols("AAPL", auto.assign = F, from = "2017-01-01", to = "2018-01-01")
+#initialize data to get number of columns
+data <- data[,4]
+#since I only use the close price,I pick it up manually
+for(i in 2:30){
+datatemp <- getSymbols(DJIname[i], auto.assign = F,
+from = "2017-01-01", to = "2018-01-01")
+#since we only take use of close price,I think to get it first is better
+datatemp <- datatemp[,4]
+data <- cbind.data.frame(data,datatemp)
+}
+#A for-loop to get other data and put to them into one dataframe.
+colnames(data) <- DJIname
+for(i in 1:nrow(data)){
+tempname <- substr(rownames(data)[i],start = 6,stop=nchar(rownames(data)[i]))
+rownames(data)[i] <- tempname
+}
+#rename colunms and rows
+biplot(princomp(data,cor=F))
+screeplot(princomp(data,cor=F))
+biplot(princomp(data,cor=T))
+screeplot(princomp(data,cor=T))
+head(data.lag)
+data <- as.matrix(data)
+data.lag <- diff(data,lag=1,differences = 1)
+data <- data[-1,]
+data.r <- data.lag/data
+screeplot(princomp(data.r,cor=T))
+head(data.lag)

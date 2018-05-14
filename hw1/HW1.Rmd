@@ -1,0 +1,97 @@
+---
+title: "5241 HW1 Haiqi Li hl3115"
+author: "Haiqi Li"
+date: "27/1/2018"
+output: pdf_document
+---
+
+#Problem 3
+##1
+
+First I copied the chart in Wiki with all their symbols to Excel.Then I copied the symbol column and paste with transpose. Finally I get longstring here.
+
+```{r,warning=F}
+options("getSymbols.yahoo.warning"=FALSE) 
+options("getSymbols.warning4.0"=FALSE) 
+options(warn = F)
+library(quantmod,warn.conflicts = F)
+
+longstring="AAPL	AXP	BA	CAT	CSCO	CVX	DIS	DWDP	GE	GS	HD	IBM	INTC	JNJ	JPM	KO	MCD	MMM	MRK	MSFT	NKE	PFE	PG	TRV	UNH	UTX	V	VZ	WMT	XOM
+"
+DJIname <- strsplit(longstring,split = "\t")
+DJIname <- DJIname[[1]]#unlist it
+DJIname[30] <- "XOM"#final term has a \n
+data <- getSymbols("AAPL", auto.assign = F, from = "2017-01-01", to = "2018-01-01")
+#initialize data to get number of columns
+data <- data[,4]
+#since I only use the close price,I pick it up manually
+
+for(i in 2:30){
+  datatemp <- getSymbols(DJIname[i], auto.assign = F,
+              from = "2017-01-01", to = "2018-01-01")
+  #since we only take use of close price,I think to get it first is better
+  datatemp <- datatemp[,4]
+  data <- cbind.data.frame(data,datatemp)
+}
+#A for-loop to get other data and put to them into one dataframe.
+
+colnames(data) <- DJIname
+for(i in 1:nrow(data)){
+  tempname <- substr(rownames(data)[i],start = 6,stop=nchar(rownames(data)[i]))
+  rownames(data)[i] <- tempname
+}
+#rename colunms and rows
+```
+
+#2
+
+```{r}
+biplot(princomp(data,cor=F))
+```
+
+The biplot here is not very informative since all vectors are very condensed in the picture.
+
+```{r}
+screeplot(princomp(data,cor=F))
+```
+
+The screeplot here shows that component 1 takes most of variance. I think only one component is really important.
+
+#3
+
+```{r}
+biplot(princomp(data,cor=T))
+```
+
+After modification of scale,I think this time the biplot is much more informatice. I noticed that McDonald and Coca-Cola are very closed to each and they are all food companies.Also,most finacial companies like JPMorgan,Travelers and Visa are of negative component 2 and are closed to each. Maybe Goldman Sachs veries here.
+
+```{r}
+screeplot(princomp(data,cor=T))
+```
+
+This time,the screelot shows that Component 2 may count for something,too.
+
+
+#4
+```{r}
+data <- as.matrix(data)
+data.lag <- diff(data,lag=1,differences = 1)
+data <- data[-1,]
+data.r <- data.lag/data
+screeplot(princomp(data.r,cor=T))
+```
+
+The screeplot here shows that only component 1 and 2 could not explain all variance.Many other components do make sense.
+
+```{r}
+biplot(princomp(data.r,cor=T))
+```
+
+The biplot show that all stocks are of negative component 1. I think this tell us some information about the whole market trend since they are all in one direction.
+
+If the stocks fluctuate randomly and independent to each,I think the direction of each stock vector should distribute more uniform, just like a circle. 
+
+
+
+
+
