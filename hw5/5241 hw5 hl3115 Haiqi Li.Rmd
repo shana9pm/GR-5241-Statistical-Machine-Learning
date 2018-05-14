@@ -1,0 +1,130 @@
+---
+title: "5241 hw5 Haiqi Li hl3115"
+author: "Haiqi Li"
+date: "13/4/2018"
+output: pdf_document
+---
+
+
+```{r}
+H<-matrix(readBin("histograms.bin", "double", 640000), 40000, 16)
+dim(H)
+```
+
+```{r}
+H <- H+0.01 #avoid numerical problem
+centroids_init <- function(K,H){
+  # Initialization of centroid matrix T
+  # args:
+  # K: num of clusters
+  # H: Histogram matrix
+  # 
+  # returns:
+  # T.matrix: A matrix of centroids.Row is centroid vectors
+  choice <- sample(nrow(H),K,replace = F)
+  T.matrix <-H[choice,]
+  return(T.matrix)
+}
+```
+
+
+```{r}
+E.step <- function(H,T.matrix,C){
+  # E-step implementation
+  # args:
+  # H:n by d
+  # T.matrix:k by d
+  # C:k by 1 matrix,not vector
+  # returns:
+  # A:n by k 
+  phi <- exp(H %*% log(t(T.matrix)))
+  A <- matrix(0,nrow = nrow(H),ncol = nrow(T.matrix))#init of A
+  
+  for (i in 1:nrow(H)) {
+    dinominator <- (phi[i,] %*% C)
+    for (k in 1:nrow(T.matrix)) {
+      A[i,k] <- C[k,1]*phi[i,k]/dinominator
+    }
+  }
+  
+  return(A)
+}
+```
+```{r}
+M.step <- function(A,H){
+  # implementation of M-step
+  # args:
+  #   A:n by k
+  #   H:n by d
+  # returns:
+  # a list of (C,T.matrix)
+  # C:k by 1 matrix
+  # T.matrix:k by d
+    
+  C <- matrix(colSums(A)/nrow(A),ncol=1)
+  #C is k by 1 matrix
+  b <- t(A) %*% H
+  #b is k by d matrix,every row is b_k in hw
+  row.normal <- function(row){
+    sum.row <- as.numeric(sum(row))
+    row <- row/sum.row
+    return(row)
+  }
+  # a self-define funcyion to apply every row
+  # with the dominate as sum of all rows
+  
+  T.matrix <- t(apply(b, 1, row.normal))
+  out <- list(C=C,T.matrix=T.matrix)
+  return(out)
+}
+```
+
+```{r}
+
+MultinomialEM <- function(H,K,tau){
+  delta <- Inf
+  T.matrix <- centroids_init(K,H)
+  # The first step
+  C <- matrix(1,nrow = K,ncol=1)
+  
+  A.prev <- E.step(H,T.matrix,C)
+  
+
+  while (delta>= tau) {
+    temp <- M.step(A.prev,H)
+    C <- temp$C
+    T.matrix <- temp$T.matrix
+    
+    A <- E.step(H,T.matrix,C)
+    delta <- norm(A-A.prev,"O")
+    A.prev <- A
+  }
+  m <- apply(A.prev, 1, which.max)
+  return(m)
+}
+
+```
+
+
+
+```{r}
+set.seed(1)
+m3 <- MultinomialEM(H,3,0.01)
+pic3 <- matrix(m3,nrow = 200, ncol = 200, byrow = TRUE)
+image(pic3, col = grey(seq(0, 1, length = 256)), main = "K=3")
+```
+
+```{r}
+
+m4 <- MultinomialEM(H,4,0.01)
+pic4 <- matrix(m4,nrow = 200, ncol = 200, byrow = TRUE)
+image(pic4, col = grey(seq(0, 1, length = 256)), main = "K=4")
+```
+
+
+```{r}
+
+m5 <- MultinomialEM(H,5,0.01)
+pic5 <- matrix(m5,nrow = 200, ncol = 200, byrow = TRUE)
+image(pic5, col = grey(seq(0, 1, length = 256)), main = "K=5")
+```
